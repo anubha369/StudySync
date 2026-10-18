@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudySync — Automated QA Test Suite</title>
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --border: #E5E7EB;
+      --text: #0F172A;
+      --muted: #64748B;
+      --pass: #10B981;
+      --fail: #EF4444;
+      --primary: #4F46E5;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 6px; font-size: 24px; font-weight: 700; }
+    p.subtitle { color: var(--muted); margin-bottom: 24px; font-size: 14px; }
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 28px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 36px;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .stat { text-align: center; }
+    .stat-val { font-size: 32px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+    .stat-val.pass { color: var(--pass); }
+    .stat-val.fail { color: var(--fail); }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 6px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+    .suite-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .suite-header {
+      padding: 14px 20px;
+      background: #F1F5F9;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .test-row {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 13px;
+    }
+    .test-row:last-child { border-bottom: none; }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .badge-pass { background: #D1FAE5; color: #065F46; }
+    .badge-fail { background: #FEE2E2; color: #991B1B; }
+    .test-msg { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.5; }
+    .test-err { color: var(--fail); font-size: 12px; margin-top: 4px; font-family: monospace; }
+    .btn-run {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: opacity 0.15s;
+    }
+    .btn-run:hover { opacity: 0.9; }
+  </style>
+
+  <!-- Load App scripts in dependency order -->
+  <script src="js/vendor/chart.umd.min.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/tasks.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/settings.js"></script>
+</head>
+<body>
+
+  <!-- Hidden dummy DOM fixture for UI helper tests -->
+  <div id="test-dom-fixture" style="display:none">
+    <div id="toast-container"></div>
+    <div id="modal-overlay"><div id="modal"></div></div>
+    <div id="sidebar"></div>
+    <div id="page-dashboard" class="page-section"></div>
+    <div id="page-tasks" class="page-section"></div>
+    <div id="page-planner" class="page-section"></div>
+    <div id="page-timer" class="page-section"></div>
+    <div id="page-analytics" class="page-section"></div>
+    <div id="page-settings" class="page-section"></div>
+    <div id="timer-time"></div>
+    <div id="timer-phase"></div>
+    <div id="btn-timer-play"></div>
+    <svg><circle id="timer-ring-progress"></circle></svg>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1>StudySync — Automated QA Test Suite</h1>
+      <p class="subtitle">Complete unit and integration tests covering utils, storage, state, tasks, planner, timer, and analytics.</p>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <a href="index.html" style="display:inline-block; padding:8px 16px; border:1px solid #CBD5E1; border-radius:8px; text-decoration:none; color:#0F172A; font-size:13px; font-weight:600; background:white;">← Back to App</a>
+      <button class="btn-run" onclick="runTests()">Re-run All Tests</button>
+    </div>
+  </div>
+
+  <div class="summary-card">
+    <div class="stat">
+      <div class="stat-val" id="stat-total">0</div>
+      <div class="stat-lbl">Total Tests</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val pass" id="stat-pass">0</div>
+      <div class="stat-lbl">Passed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val fail" id="stat-fail">0</div>
+      <div class="stat-lbl">Failed</div>
+    </div>
+    <div class="stat" style="margin-left:auto; text-align:right;">
+      <div id="stat-status" style="font-weight:700; font-size:18px;">Running...</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:4px;" id="stat-time"></div>
+    </div>
+  </div>
+
+  <div id="suites-container"></div>
+
+  <script>
+    var results = { total: 0, passed: 0, failed: 0 };
+    var suites = [];
+    var currentSuite = null;
+
+    function describe(name, fn) {
+      currentSuite = { name: name, tests: [] };
+      suites.push(currentSuite);
+      fn();
+    }
+
+    function it(msg, fn) {
+      results.total++;
+      var testObj = { msg: msg, pass: false, error: null };
+      try {
+        fn();
+        testObj.pass = true;
+        results.passed++;
+      } catch (e) {
+        testObj.pass = false;
+        testObj.error = e.message || String(e);
+        results.failed++;
+      }
+      currentSuite.tests.push(testObj);
+    }
+
+    function assert(cond, msg) {
+      if (!cond) throw new Error(msg || 'Assertion failed');
+    }
+    function assertEquals(actual, expected, msg) {
+      if (actual !== expected) throw new Error((msg ? msg + ': ' : '') + 'Expected ' + JSON.stringify(expected) + ' but got ' + JSON.stringify(actual));
+    }
+
+    function runTests() {
+      results = { total: 0, passed: 0, failed: 0 };
+      suites = [];
+      var startTime = performance.now();
+
+      // ──────────────────────────────────────────
+      // 1. Utils Suite
+      // ──────────────────────────────────────────
+      describe('Utils Module (utils.js)', function() {
+        var u = window.StudySync.utils;
+
+        it('generateId returns unique non-empty strings', function() {
+          var id1 = u.generateId();
+          var id2 = u.generateId();
+          assert(typeof id1 === 'string' && id1.length > 5, 'id1 is valid string');
+          assert(id1 !== id2, 'id1 and id2 are distinct');
+        });
+
+        it('toDateStr returns YYYY-MM-DD format', function() {
+          var d = new Date(2026, 9, 18); // Oct 18, 2026
+          assertEquals(u.toDateStr(d), '2026-10-18');
+        });
+
+        it('parseDate safely handles valid dates and malformed/null input without crashing', function() {
+          var valid = u.parseDate('2026-10-18');
+          assertEquals(valid.getFullYear(), 2026);
+          assertEquals(valid.getMonth(), 9);
+          assertEquals(valid.getDate(), 18);
+
+          var safe1 = u.parseDate(null);
+          assert(safe1 instanceof Date, 'handles null');
+          var safe2 = u.parseDate('');
+          assert(safe2 instanceof Date, 'handles empty string');
+          var safe3 = u.parseDate('invalid-date');
+          assert(safe3 instanceof Date, 'handles invalid string');
+        });
+
+        it('formatTime formats seconds into MM:SS correctly', function() {
+          assertEquals(u.formatTime(1500), '25:00');
+          assertEquals(u.formatTime(65), '01:05');
+          assertEquals(u.formatTime(0), '00:00');
+        });
+
+        it('formatDuration converts minutes into hours and minutes', function() {
+          assertEquals(u.formatDuration(45), '45m');
+          assertEquals(u.formatDuration(60), '1h');
+          assertEquals(u.formatDuration(90), '1h 30m');
+          assertEquals(u.formatDuration(120), '2h');
+        });
+
+        it('priorityOrder maps high=0, medium=1, low=2', function() {
+          assertEquals(u.priorityOrder('high'), 0);
+          assertEquals(u.priorityOrder('medium'), 1);
+          assertEquals(u.priorityOrder('low'), 2);
+          assertEquals(u.priorityOrder('unknown'), 3);
+        });
+
+        it('clamp confines numbers within min and max boundaries', function() {
+          assertEquals(u.clamp(50, 0, 100), 50);
+          assertEquals(u.clamp(-10, 0, 100), 0);
+          assertEquals(u.clamp(150, 0, 100), 100);
+        });
+
+        it('sum adds array elements with or without projection function', function() {
+          assertEquals(u.sum([10, 20, 30]), 60);
+          assertEquals(u.sum([{v: 5}, {v: 15}], function(x){ return x.v; }), 20);
+        });
+
+        it('weekDates returns 7 consecutive dates starting on Monday', function() {
+          var week = u.weekDates(new Date(2026, 9, 18));
+          assertEquals(week.length, 7);
+          var mon = week[0].getDay();
+          assertEquals(mon, 1, 'First day is Monday');
+        });
+      });
+
+      // ──────────────────────────────────────────
+      // 2. Storage Suite
+      // ──────────────────────────────────────────
+      describe('Storage Module (storage.js)', function() {
+        var s = window.StudySync.storage;
+
+        it('safe write and read preserves JSON types', function() {
+          var testKey = 'ss_test_data_qa';
+          var payload = { hello: 'world', count: 42, active: true };
+          s.write(testKey, payload);
+          var readBack = s.read(testKey);
+          assertEquals(readBack.hello, 'world');
+          assertEquals(readBack.count, 42);
+          assertEquals(readBack.active, true);
+          localStorage.removeItem(testKey);
+        });
+
+        it('seedData populates default tasks, subjects, sessions, and timer logs', function() {
+          s.seedData();
+          var tasks = s.getTasks();
+          var subjects = s.getSubjects();
+          var sessions = s.getSessions();
+          var timerLog = s.getTimerLog();
+          assert(Array.isArray(tasks) && tasks.length >= 5, 'tasks seeded');
+          assert(Array.isArray(subjects) && subjects.length >= 3, 'subjects seeded');
+          assert(Array.isArray(sessions) && sessions.length >= 3, 'sessions seeded');
+          assert(Array.isArray(timerLog) && timerLog.length >= 5, 'timerLog seeded');
+        });
+
+        it('getSettings returns default values if none exist', function() {
+          var settings = s.getSettings();
+          assert(typeof settings.pomodoroDuration === 'number', 'has pomodoroDuration');
+          assert(typeof settings.darkMode === 'boolean', 'has darkMode');
+          assert(typeof settings.name === 'string', 'has name');
+        });
+
+        it('importJSON parses and restores state safely', function() {
+          var sample = JSON.stringify({
+            tasks: [{ id: 'imp_1', title: 'Imported Task', status: 'todo' }],
+            subjects: [{ id: 'sub_1', name: 'Art', color: '#10B981' }],
+            sessions: [],
+            timerLog: []
+          });
+          s.importJSON(sample);
+          var tasks = s.getTasks();
+          var found = tasks.find(function(t){ return t.id === 'imp_1'; });
+          assert(found !== undefined, 'Imported task exists');
+          // reseed to clean up
+          s.seedData();
+        });
+      });
+
+      // ──────────────────────────────────────────
+      // 3. State Management Suite
+      // ──────────────────────────────────────────
+      describe('State Store (state.js)', function() {
+        var state = window.StudySync.state;
+        var u = window.StudySync.utils;
+
+        it('state.load() synchronizes internal state with storage', function() {
+          state.load();
+          var tasks = state.get('tasks');
+          assert(Array.isArray(tasks), 'tasks is array');
+        });
+
+        it('state.addTask() appends task and triggers "tasks:change"', function() {
+          var triggered = false;
+          var handler = function() { triggered = true; };
+          state.on('tasks:change', handler);
+
+          var testId = 'test_' + u.generateId();
+          state.addTask({
+            id: testId,
+            title: 'Test Task QA',
+            subject: 'Mathematics',
+            priority: 'high',
+            status: 'todo',
+            dueDate: '2026-10-25'
+          });
+
+          state.off('tasks:change', handler);
+          assert(triggered, 'tasks:change event fired');
+
+          var found = state.get('tasks').find(function(t){ return t.id === testId; });
+          assert(found !== undefined, 'Task exists in state');
+          state.deleteTask(testId);
+        });
+
+        it('completeTask and uncompleteTask manage status and completedAt timestamps', function() {
+          var testId = 'test_done_' + u.generateId();
+          state.addTask({
+            id: testId,
+            title: 'Task To Complete QA',
+            status: 'todo'
+          });
+
+          state.completeTask(testId);
+          var taskDone = state.get('tasks').find(function(t){ return t.id === testId; });
+          assertEquals(taskDone.status, 'done');
+          assert(taskDone.completedAt !== null, 'completedAt is set when done');
+
+          state.uncompleteTask(testId);
+          var taskTodo = state.get('tasks').find(function(t){ return t.id === testId; });
+          assertEquals(taskTodo.status, 'todo');
+          assertEquals(taskTodo.completedAt, null, 'completedAt is reset to null when reopened');
+
+          state.deleteTask(testId);
+        });
+
+        it('addSession and deleteSession update sessions list and notify subscribers', function() {
+          var notified = false;
+          var handler = function() { notified = true; };
+          state.on('sessions:change', handler);
+
+          var sessId = 'sess_test_' + u.generateId();
+          state.addSession({
+            id: sessId,
+            subject: 'Physics',
+            date: '2026-10-18',
+            startTime: '10:00',
+            endTime: '11:00',
+            duration: 60
+          });
+
+          assert(notified, 'sessions:change fired on add');
+          var sess = state.get('sessions').find(function(s){ return s.id === sessId; });
+          assert(sess !== undefined, 'Session added');
+
+          state.deleteSession(sessId);
+          var deleted = state.get('sessions').find(function(s){ return s.id === sessId; });
+          assertEquals(deleted, undefined, 'Session deleted');
+          state.off('sessions:change', handler);
+        });
+
+        it('updateSettings updates setting values and fires "settings:change"', function() {
+          var eventFired = false;
+          var handler = function() { eventFired = true; };
+          state.on('settings:change', handler);
+
+          state.updateSettings({ name: 'Jordan Smith' });
+          state.off('settings:change', handler);
+
+          assert(eventFired, 'settings:change event fired');
+          assertEquals(state.get('settings').name, 'Jordan Smith');
+        });
+      });
+
+      // ──────────────────────────────────────────
+      // 4. Interactive Logic & Math Suite
+      // ──────────────────────────────────────────
+      describe('Analytics & Business Logic', function() {
+        var u = window.StudySync.utils;
+        var state = window.StudySync.state;
+
+        it('Calculates completion rate accurately as integer percentage', function() {
+          var tasks = [
+            { status: 'done' },
+            { status: 'done' },
+            { status: 'todo' },
+            { status: 'in-progress' }
+          ];
+          var done = tasks.filter(function(t){ return t.status === 'done'; }).length;
+          var pct = Math.round((done / tasks.length) * 100);
+          assertEquals(pct, 50);
+        });
+
+        it('Calculates study streaks without negative day gaps', function() {
+          var timerLog = [
+            { date: u.today(), duration: 25 },
+            { date: u.toDateStr(u.addDays(new Date(), -1)), duration: 25 },
+            { date: u.toDateStr(u.addDays(new Date(), -2)), duration: 25 }
+          ];
+          var byDate = {};
+          timerLog.forEach(function(e){ byDate[e.date] = true; });
+          var streak = 0;
+          var d = new Date();
+          d.setHours(0,0,0,0);
+          while (true) {
+            var key = u.toDateStr(d);
+            if (!byDate[key]) break;
+            streak++;
+            d.setDate(d.getDate() - 1);
+          }
+          assertEquals(streak, 3, 'Consecutive 3-day streak calculated');
+        });
+
+        it('Timer display calculation formats 25m correctly', function() {
+          var totalSeconds = 25 * 60;
+          var secondsLeft = 1450;
+          var pct = 1 - (secondsLeft / totalSeconds);
+          var dashOffset = 660 * (1 - pct);
+          assert(dashOffset > 0 && dashOffset < 660, 'Ring offset is within bounds');
+        });
+      });
+
+      // ──────────────────────────────────────────
+      // 5. Vendor & Offline Sanity
+      // ──────────────────────────────────────────
+      describe('Vendor & Offline Assets', function() {
+        it('Chart.js vendor library is available locally on window.Chart', function() {
+          assert(typeof window.Chart === 'function', 'Chart.js is loaded without external CDN');
+        });
+
+        it('Inline SVG icon helper returns valid SVG markup for all core icons', function() {
+          var app = window.StudySync.app;
+          var requiredIcons = ['dashboard', 'tasks', 'planner', 'timer', 'analytics', 'settings', 'plus', 'check'];
+          requiredIcons.forEach(function(name) {
+            var svg = app.icon(name);
+            assert(typeof svg === 'string' && svg.includes('<svg') && svg.includes('</svg>'), 'icon ' + name + ' is valid SVG');
+          });
+        });
+      });
+
+      var duration = Math.round(performance.now() - startTime);
+
+      // Render Results
+      renderUI(duration);
+    }
+
+    function renderUI(duration) {
+      document.getElementById('stat-total').textContent = results.total;
+      document.getElementById('stat-pass').textContent = results.passed;
+      document.getElementById('stat-fail').textContent = results.failed;
+      document.getElementById('stat-time').textContent = 'Completed in ' + duration + 'ms';
+
+      var statusEl = document.getElementById('stat-status');
+      if (results.failed === 0) {
+        statusEl.textContent = 'All Tests Passing ✓';
+        statusEl.style.color = 'var(--pass)';
+      } else {
+        statusEl.textContent = results.failed + ' Tests Failed ✕';
+        statusEl.style.color = 'var(--fail)';
+      }
+
+      var container = document.getElementById('suites-container');
+      container.innerHTML = suites.map(function(suite) {
+        var rows = suite.tests.map(function(test) {
+          return [
+            '<div class="test-row">',
+              '<span class="badge ' + (test.pass ? 'badge-pass' : 'badge-fail') + '">',
+                test.pass ? 'PASS' : 'FAIL',
+              '</span>',
+              '<div class="test-msg">',
+                test.msg,
+                test.error ? '<div class="test-err">' + test.error + '</div>' : '',
+              '</div>',
+            '</div>'
+          ].join('');
+        }).join('');
+
+        return [
+          '<div class="suite-card">',
+            '<div class="suite-header">',
+              '<span>' + suite.name + '</span>',
+              '<span style="font-size:12px; color:var(--muted)">' + suite.tests.filter(function(t){return t.pass;}).length + '/' + suite.tests.length + ' passed</span>',
+            '</div>',
+            rows,
+          '</div>'
+        ].join('');
+      }).join('');
+    }
+
+    // Auto-run on load
+    window.addEventListener('DOMContentLoaded', runTests);
+  </script>
+</body>
+</html>

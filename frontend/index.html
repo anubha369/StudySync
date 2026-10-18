@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="StudySync — Your Academic Life, Organized. A student productivity dashboard with tasks, study planner, focus timer, and analytics.">
+  <title>Dashboard — StudySync</title>
+
+  <!-- Google Fonts (optional, fallback font-stack is system-ui/sans-serif) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design system & components -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Favicon (inline SVG) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><path d='M8 10h16M8 16h10M8 22h12' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div id="mobile-overlay" class="mobile-overlay"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     App Shell
+═══════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+    <!-- Populated by app.js renderSidebar() -->
+  </aside>
+
+  <!-- ── Main area ───────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- Top Bar -->
+    <header class="topbar" role="banner">
+      <button class="topbar-toggle btn btn-ghost btn-icon" id="topbar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-heading">
+        <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+        <div class="topbar-subtitle" id="topbar-subtitle">Overview &amp; study progress</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm" id="quick-add-task" onclick="StudySync.tasks.openAddModal()" title="Create task (Shortcut: Press N)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Task
+        </button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════
+         PAGE SECTIONS
+    ════════════════════════════════════════════════ -->
+    <main role="main">
+
+      <!-- ═══ DASHBOARD ══════════════════════════════ -->
+      <section id="page-dashboard" class="page-section">
+        <div class="page-content">
+
+          <!-- Welcome banner -->
+          <div class="welcome-banner" id="dash-welcome">
+            <!-- Populated by dashboard.js -->
+          </div>
+
+          <!-- Stat cards -->
+          <div class="stat-grid" id="dash-stats">
+            <!-- Populated by dashboard.js -->
+          </div>
+
+          <!-- Row 3: 12-col grid (8 cols Weekly Productivity chart + 4 cols Today's Priorities) -->
+          <div class="dashboard-row-3">
+            <!-- Weekly Productivity Chart (8 cols) -->
+            <div class="card card-productivity">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Weekly Productivity
+                  </div>
+                  <div class="card-subtitle">Study hours &amp; tasks completed (last 7 days)</div>
+                </div>
+              </div>
+              <div class="card-body chart-card-body">
+                <canvas id="dash-productivity-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Today's Priorities (4 cols) -->
+            <div class="card card-priorities">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Today's Priorities
+                  </div>
+                  <div class="card-subtitle">Urgent &amp; due tasks</div>
+                </div>
+                <a href="#/tasks" class="btn btn-ghost btn-sm" onclick="StudySync.app.navigate('#/tasks');return false;">View all</a>
+              </div>
+              <div class="card-body" style="padding-top:12px">
+                <div id="dash-priorities" class="upcoming-list"><!-- populated --></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: 12-col grid (4 cols Upcoming + 4 cols Today's Blocks + 4 cols Recently Completed) -->
+          <div class="dashboard-row-4">
+            <!-- Upcoming Deadlines (4 cols) -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Upcoming Deadlines
+                  </div>
+                  <div class="card-subtitle">Next 7 days</div>
+                </div>
+                <a href="#/tasks" class="btn btn-ghost btn-sm" onclick="StudySync.app.navigate('#/tasks');return false;">View all</a>
+              </div>
+              <div class="card-body" style="padding-top:12px">
+                <div id="dash-upcoming" class="upcoming-list"><!-- populated --></div>
+              </div>
+            </div>
+
+            <!-- Today's Schedule (4 cols) -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Today's Study Blocks
+                  </div>
+                  <div class="card-subtitle" id="dash-today-date"></div>
+                </div>
+                <a href="#/planner" class="btn btn-ghost btn-sm" onclick="StudySync.app.navigate('#/planner');return false;">Planner</a>
+              </div>
+              <div class="card-body" style="padding-top:12px">
+                <div id="dash-today-sessions"><!-- populated --></div>
+              </div>
+            </div>
+
+            <!-- Recently Completed (4 cols) -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Recently Completed
+                </div>
+              </div>
+              <div class="card-body" id="dash-recent-tasks"><!-- populated --></div>
+            </div>
+          </div>
+
+          <!-- Hidden container to preserve compatibility with streak if queried -->
+          <div id="dash-streak" style="display:none"></div>
+
+        </div><!-- /page-content -->
+      </section>
+
+
+      <!-- ═══ MY TASKS ════════════════════════════════ -->
+      <section id="page-tasks" class="page-section">
+        <div class="page-content">
+
+          <div class="tasks-toolbar">
+            <!-- Filter tabs -->
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all">All <span class="filter-badge" style="font-size:10px;margin-left:4px;color:var(--text-muted)"></span></button>
+              <button class="filter-tab" data-filter="todo">To Do <span class="filter-badge" style="font-size:10px;margin-left:4px;color:var(--text-muted)"></span></button>
+              <button class="filter-tab" data-filter="in-progress">In Progress</button>
+              <button class="filter-tab" data-filter="done">Done</button>
+              <button class="filter-tab" data-filter="overdue">Overdue</button>
+              <button class="filter-tab" data-filter="high">High</button>
+            </div>
+
+            <!-- Search -->
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="tasks-search" type="text" placeholder="Search tasks…" autocomplete="off">
+            </div>
+
+            <!-- Sort -->
+            <div class="task-sort">
+              <span style="font-size:var(--text-xs);color:var(--text-muted);white-space:nowrap">Sort by</span>
+              <select id="tasks-sort">
+                <option value="due">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="subject">Subject</option>
+                <option value="created">Newest</option>
+              </select>
+            </div>
+
+            <!-- Add task -->
+            <button class="btn btn-primary" id="btn-add-task">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Task
+            </button>
+          </div>
+
+          <!-- Task list -->
+          <div id="tasks-list" class="tasks-list">
+            <!-- Populated by tasks.js -->
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ═══ STUDY PLANNER ═══════════════════════════ -->
+      <section id="page-planner" class="page-section">
+        <div class="page-content">
+
+          <div class="planner-header">
+            <div class="week-nav">
+              <button class="btn btn-secondary btn-sm" id="planner-prev">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="week-label" id="planner-week-label">Loading…</span>
+              <button class="btn btn-secondary btn-sm" id="planner-next">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="btn btn-ghost btn-sm" id="planner-today">Today</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="planner-week-summary" style="font-size:var(--text-xs);color:var(--text-muted)"></span>
+              <button class="btn btn-primary btn-sm" id="btn-add-session">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Session
+              </button>
+            </div>
+          </div>
+
+          <div class="planner-layout">
+            <!-- Calendar -->
+            <div>
+              <div id="planner-grid" style="overflow-x:auto"><!-- populated --></div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="planner-sidebar">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Subjects</div>
+                </div>
+                <div class="card-body" style="padding-top:8px;padding-bottom:8px">
+                  <div class="subject-list" id="planner-subjects"><!-- populated --></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">This Week</div>
+                </div>
+                <div class="card-body">
+                  <p style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:8px">Click any time slot to add a study block.</p>
+                  <div id="planner-week-summary-card" style="font-size:var(--text-sm);color:var(--text);font-weight:600"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ═══ FOCUS TIMER ══════════════════════════════ -->
+      <section id="page-timer" class="page-section">
+        <div class="page-content">
+
+          <div class="timer-layout">
+
+            <!-- Main timer card -->
+            <div class="card timer-card">
+              <!-- Mode tabs -->
+              <div class="timer-mode-tabs">
+                <button class="timer-mode-tab active" data-mode="focus">Focus</button>
+                <button class="timer-mode-tab" data-mode="short">Short Break</button>
+                <button class="timer-mode-tab" data-mode="long">Long Break</button>
+              </div>
+
+              <!-- SVG Ring -->
+              <div class="timer-ring-container">
+                <svg class="timer-ring-svg" viewBox="0 0 240 240">
+                  <circle class="timer-ring-bg"       cx="120" cy="120" r="105"/>
+                  <circle class="timer-ring-progress" cx="120" cy="120" r="105"
+                    id="timer-ring-progress"
+                    stroke-dasharray="660"
+                    stroke-dashoffset="660"/>
+                </svg>
+                <div class="timer-display">
+                  <div class="timer-time" id="timer-time">25:00</div>
+                  <div class="timer-phase" id="timer-phase">Focus Time</div>
+                </div>
+              </div>
+
+              <!-- Pomodoro progress dots -->
+              <div class="timer-pomodoro-dots" id="pomo-dots">
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+                <div class="pomodoro-dot"></div>
+              </div>
+
+              <!-- Controls -->
+              <div class="timer-controls">
+                <button class="btn btn-ghost btn-icon" id="btn-timer-reset" title="Reset">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                </button>
+                <button class="btn-timer-main" id="btn-timer-play" title="Start / Pause">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <button class="btn btn-ghost btn-icon" id="btn-timer-skip" title="Skip to next">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+              </div>
+
+              <p style="font-size:var(--text-xs);color:var(--text-muted);text-align:center;max-width:260px">
+                Complete 4 focus sessions to earn a long break. Each dot represents one session.
+              </p>
+            </div>
+
+            <!-- Timer sidebar -->
+            <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+
+              <!-- Subject selector -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                    Studying
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="timer-subject-select">
+                    <select id="timer-subject" class="form-control">
+                      <option value="">— No subject —</option>
+                    </select>
+                    <p style="font-size:var(--text-xs);color:var(--text-muted)">Select what you're studying to track time by subject.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Today's log -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Today's Sessions
+                  </div>
+                </div>
+                <div class="card-body" style="padding-top:8px">
+                  <div class="timer-log-list" id="timer-log-list"><!-- populated --></div>
+                </div>
+              </div>
+
+              <!-- Tips -->
+              <div class="card" style="background:var(--primary-light);border-color:var(--primary)">
+                <div class="card-body">
+                  <div style="font-size:var(--text-sm);font-weight:600;color:var(--primary);margin-bottom:6px">Pomodoro Tip</div>
+                  <p style="font-size:var(--text-xs);color:var(--text-muted);line-height:1.6">
+                    During focus time, close social media and put your phone face-down. Even a 2-second distraction can break your flow!
+                  </p>
+                </div>
+              </div>
+
+            </div><!-- /timer sidebar -->
+
+          </div><!-- /timer-layout -->
+
+        </div><!-- /page-content -->
+      </section>
+
+
+      <!-- ═══ ANALYTICS ════════════════════════════════ -->
+      <section id="page-analytics" class="page-section">
+        <div class="page-content">
+
+          <!-- Summary stats -->
+          <div class="stat-grid" id="analytics-stats"><!-- populated --></div>
+
+          <div class="analytics-grid">
+
+            <!-- Tasks by Subject (donut) -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+                  Tasks by Subject
+                </div>
+              </div>
+              <div class="card-body" id="chart-tasks-subject"><!-- populated --></div>
+            </div>
+
+            <!-- Study Hours Bar -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                  Daily Focus Time
+                </div>
+                <div class="card-subtitle">Last 7 days</div>
+              </div>
+              <div class="card-body" id="chart-study-hours"><!-- populated --></div>
+            </div>
+
+            <!-- Completion by priority -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  Completion by Priority
+                </div>
+              </div>
+              <div class="card-body" id="chart-completion"><!-- populated --></div>
+            </div>
+
+            <!-- Top subjects -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  Top Subjects by Focus Time
+                </div>
+              </div>
+              <div class="card-body" id="analytics-top-subjects"><!-- populated --></div>
+            </div>
+
+            <!-- Activity heatmap -->
+            <div class="card full-width">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  Activity Heatmap
+                </div>
+                <div class="card-subtitle">Last 28 days</div>
+              </div>
+              <div class="card-body" id="chart-heatmap"><!-- populated --></div>
+            </div>
+
+          </div><!-- /analytics-grid -->
+
+        </div>
+      </section>
+
+
+      <!-- ═══ SETTINGS ════════════════════════════════ -->
+      <section id="page-settings" class="page-section">
+        <div class="page-content">
+
+          <div class="settings-layout">
+
+            <!-- Settings nav -->
+            <nav class="settings-nav">
+              <div class="settings-nav-item active" data-panel="profile">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Profile
+              </div>
+              <div class="settings-nav-item" data-panel="timer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Timer
+              </div>
+              <div class="settings-nav-item" data-panel="subjects">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                Subjects
+              </div>
+              <div class="settings-nav-item" data-panel="appearance">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                Appearance
+              </div>
+              <div class="settings-nav-item" data-panel="data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Data
+              </div>
+            </nav>
+
+            <!-- Settings panels -->
+            <div>
+
+              <!-- Profile -->
+              <div class="settings-panel active" id="settings-panel-profile">
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title">Profile</div>
+                  </div>
+                  <div id="settings-profile-content"><!-- populated --></div>
+                </div>
+              </div>
+
+              <!-- Timer -->
+              <div class="settings-panel" id="settings-panel-timer">
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title">Pomodoro Timer</div>
+                  </div>
+                  <div id="settings-timer-content"><!-- populated --></div>
+                </div>
+              </div>
+
+              <!-- Subjects -->
+              <div class="settings-panel" id="settings-panel-subjects">
+                <div class="settings-section">
+                  <div class="settings-section-header" style="display:flex;align-items:center;justify-content:space-between">
+                    <div class="settings-section-title">Subjects</div>
+                  </div>
+                  <div id="settings-subjects-content"><!-- populated --></div>
+                </div>
+              </div>
+
+              <!-- Appearance -->
+              <div class="settings-panel" id="settings-panel-appearance">
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title">Appearance</div>
+                  </div>
+                  <div id="settings-appearance-content"><!-- populated --></div>
+                </div>
+              </div>
+
+              <!-- Data -->
+              <div class="settings-panel" id="settings-panel-data">
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title">Data Backup &amp; Portability</div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-row-label">
+                      <h4>Export Data</h4>
+                      <p>Download all your tasks, sessions, and settings as a JSON file</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-export-data">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Export JSON
+                    </button>
+                  </div>
+                  <div class="settings-row" style="border-bottom:none">
+                    <div class="settings-row-label">
+                      <h4>Import Data</h4>
+                      <p>Restore from a previously exported JSON file</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-import-data">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      Import JSON
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display:none">
+                  </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="settings-section settings-danger-zone" style="margin-top:20px;">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title" style="color:var(--danger)">Danger Zone</div>
+                  </div>
+                  <div class="settings-row">
+                    <div class="settings-row-label">
+                      <h4>Reset Demo Data</h4>
+                      <p>Restore the standard college demo dataset for Alex Chen. Custom edits will be replaced.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-demo-reset" onclick="StudySync.app.resetDemo()">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                      Reset Demo
+                    </button>
+                  </div>
+                  <div class="settings-row" style="border-bottom:none">
+                    <div class="settings-row-label">
+                      <h4 style="color:var(--danger)">Reset All Data</h4>
+                      <p>Delete everything and reload sample data. This cannot be undone.</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="btn-reset-data">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                      Reset All
+                    </button>
+                  </div>
+                </div>
+
+                <!-- About -->
+                <div class="settings-section" style="margin-top:16px">
+                  <div class="settings-section-header">
+                    <div class="settings-section-title">About</div>
+                  </div>
+                  <div class="settings-row" style="border-bottom:none">
+                    <div class="settings-row-label">
+                      <h4>StudySync</h4>
+                      <p>Version 1.0.0 · Your Academic Life, Organized.</p>
+                      <p style="margin-top:4px">Built with plain HTML, CSS, and JavaScript. No frameworks, no cloud, no accounts required. All data stays on your device.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /settings panels -->
+
+          </div><!-- /settings-layout -->
+
+        </div>
+      </section>
+
+    </main><!-- /main -->
+
+  </div><!-- /main-area -->
+
+</div><!-- /app -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     Modal overlay
+═══════════════════════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true">
+  <div id="modal" class="modal"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     Toast container
+═══════════════════════════════════════════════════════ -->
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     Scripts — loaded in dependency order
+     (No ES modules — works on file:// protocol)
+═══════════════════════════════════════════════════════ -->
+<script src="js/vendor/chart.umd.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/settings.js"></script>
+
+<!-- Boot -->
+<script>
+  // Set today's date in dashboard header
+  var todayDateEl = document.getElementById('dash-today-date');
+  if (todayDateEl) {
+    todayDateEl.textContent = new Date().toLocaleDateString(undefined, {
+      weekday: 'long', month: 'long', day: 'numeric'
+    });
+  }
+
+  // Apply theme immediately before render to prevent flash
+  (function() {
+    try {
+      var s = JSON.parse(localStorage.getItem('ss_settings') || '{}');
+      if (s.darkMode) document.documentElement.setAttribute('data-theme', 'dark');
+    } catch(e) {}
+  }());
+
+  // Initialize the app reliably
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      window.StudySync.app.init();
+    });
+  } else {
+    window.StudySync.app.init();
+  }
+</script>
+
+</body>
+</html>
