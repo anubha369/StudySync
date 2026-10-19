@@ -5,7 +5,7 @@
    ======================================================== */
 
 /* ── 1. CSS Variables (Design Tokens) ─────────────────── */
-:root {
+:root, [data-theme="light"] {
   /* Surfaces & Backgrounds */
   --bg:           #F6F7FB;
   --surface:      #FFFFFF;
