@@ -19,19 +19,18 @@ To run the complete application with permanent database storage and real user ac
 3. Click **"Continue with Demo Data"** to immediately sign into the pre-seeded demo account (`demo@studysync.app` / `demo123456`) with realistic sample tasks and schedules!
 4. Explore the interactive API documentation at **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
 
-> 📖 **College Viva & Learning Guide:** See the complete beginner-friendly backend walkthrough in [`docs/BACKEND_GUIDE.md`](docs/BACKEND_GUIDE.md).
+> 📖 **College Viva & Learning Guide:** See the complete beginner-friendly backend walkthrough in [`backend/BACKEND_GUIDE.md`](backend/BACKEND_GUIDE.md).
 
 ---
 
 ### Alternative: VS Code Live Server Mode
 If you prefer running the frontend via VS Code Live Server at `http://127.0.0.1:5500`, StudySync has full CORS support configured. Just start the backend at port 8000, and open `frontend/index.html` with Live Server!
 
-
 ---
 
 ## 🧪 In-Browser Test Suite
 StudySync includes an automated unit & integration test runner:
-1. Open **`tests.html`** in your browser.
+1. Open **`frontend/tests.html`** in your browser.
 2. The automated runner will execute tests across:
    - Date calculations, time formatters, unique ID generation (`utils.js`)
    - `localStorage` safe reads, writes, and data seeding (`storage.js`)
@@ -44,25 +43,24 @@ StudySync includes an automated unit & integration test runner:
 ## 📂 Project Structure
 
 ```text
-studysync/
-├── index.html            # Main single-page application shell with all 6 views
-├── README.md             # Complete documentation and demo guide
-├── tests.html            # In-browser automated unit test suite
-├── css/
-│   └── styles.css        # Design system, CSS variables, components, dark mode, responsive styles
-├── js/
-│   ├── utils.js          # Date calculations, ID generators, formatters, clamp/sum helpers
-│   ├── storage.js        # Safe localStorage wrapper, sample dataset seeder, import/export JSON
-│   ├── state.js          # Central pub/sub state manager (notifies pages on data mutations)
-│   ├── app.js            # Router (#/hash), Lucide SVG icon helper, modal dialogs, toasts
-│   ├── dashboard.js      # Welcome banner, stat cards, upcoming tasks, study streaks
-│   ├── tasks.js          # Full Tasks CRUD, search, priority/status filters, sorting
-│   ├── planner.js        # Interactive weekly calendar schedule, subject blocks, slot selector
-│   ├── timer.js          # Pomodoro timer with SVG progress ring, break manager, audio/notifs
-│   ├── analytics.js      # Data visualizations: SVG donut chart, study hours bar chart, heatmap
-│   ├── settings.js       # User profile, custom subjects with color swatches, timer preferences
-│   └── vendor/
-│       └── chart.umd.min.js  # Local offline copy of Chart.js (no CDN dependency)
+StudySync/
+├── frontend/             # Single-Page Application (HTML, CSS, JS)
+│   ├── index.html        # Main dashboard and application shell
+│   ├── tests.html        # In-browser automated unit test runner
+│   ├── css/
+│   │   └── styles.css    # Design tokens, components, responsive layout
+│   ├── js/               # Application logic, router, views, state, api
+│   └── images/           # Brand icons and visual assets
+│
+├── backend/              # Python FastAPI REST API & Database
+│   ├── app/              # FastAPI application, SQLAlchemy models, routers
+│   ├── tests/            # Automated pytest backend test suite
+│   ├── BACKEND_GUIDE.md  # Comprehensive College Viva & Architecture Guide
+│   ├── requirements.txt  # Pinned Python dependencies
+│   ├── pytest.ini        # Pytest configuration
+│   └── .env.example      # Environment variables configuration template
+│
+└── README.md             # Project overview, setup, and demo presentation script
 ```
 
 ---
