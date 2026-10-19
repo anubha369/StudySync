@@ -12,9 +12,9 @@ window.StudySync.api = (function () {
   var TOKEN_KEY = 'studysync:v1:token';
   var USER_KEY  = 'studysync:v1:user';
 
-  // Base URL detection
-  var isSameOrigin = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') && (location.port === '8000' || location.port === '');
-  var BASE_URL = isSameOrigin ? '/api' : 'http://127.0.0.1:8000/api';
+  // Base URL detection: use local port 8000 only when testing via VS Code Live Server (port 5500)
+  var isLiveServer = (location.hostname === '127.0.0.1' || location.hostname === 'localhost') && location.port === '5500';
+  var BASE_URL = isLiveServer ? 'http://127.0.0.1:8000/api' : '/api';
 
   function getToken() {
     return localStorage.getItem(TOKEN_KEY);
