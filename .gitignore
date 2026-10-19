@@ -34,3 +34,4 @@ __pycache__/
 *.db
 *.sqlite3
 .env
+*BUG_REGISTRY*.md
