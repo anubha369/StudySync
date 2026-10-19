@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     @property
     def normalized_database_url(self) -> str:
         url = self.DATABASE_URL
+        # On Vercel / AWS Lambda serverless runtimes, root filesystem is read-only.
+        # SQLite must store the database in the writable /tmp directory.
+        if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and url.startswith("sqlite:///."):
+            return "sqlite:////tmp/studysync.db"
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         return url

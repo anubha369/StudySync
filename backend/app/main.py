@@ -15,8 +15,14 @@ from app.models import User, Profile, Task, StudySession, FocusSession
 from app.security import hash_password
 from app.routers import auth, tasks, planner, focus, profile, data, analytics
 
-# Resolve Frontend path
+# Resolve Frontend path across local and serverless environments
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
+if not FRONTEND_DIR.exists():
+    FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if not FRONTEND_DIR.exists():
+    FRONTEND_DIR = Path.cwd() / "frontend"
+if not FRONTEND_DIR.exists():
+    FRONTEND_DIR = Path("/var/task/frontend")
 
 def seed_demo_data(db):
     """Seed demo account if it doesn't already exist."""
@@ -178,13 +184,16 @@ def seed_demo_data(db):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize database tables
-    Base.metadata.create_all(bind=engine)
-    # Seed demo account
-    db = SessionLocal()
     try:
-        seed_demo_data(db)
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        # Seed demo account
+        db = SessionLocal()
+        try:
+            seed_demo_data(db)
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[Lifespan Notice] Database initialization: {e}")
     yield
 
 app = FastAPI(
@@ -201,6 +210,7 @@ origins = settings.CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -236,3 +246,12 @@ app.include_router(analytics.router)
 # Mount Frontend static files
 if FRONTEND_DIR.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+else:
+    @app.get("/")
+    def index_fallback():
+        return {
+            "status": "online",
+            "app": "StudySync API",
+            "docs": "/docs",
+            "health": "/api/health"
+        }
