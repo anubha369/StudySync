@@ -159,12 +159,13 @@ window.StudySync.state = (function () {
       // 1. Load Profile & Settings
       var profile = await api.profile.get();
       if (profile) {
+        var localSettings = storage.getSettings();
         _state.settings.name = profile.display_name || 'Student';
         _state.settings.darkMode = (profile.theme === 'dark');
         _state.settings.college = profile.college || '';
-        _state.settings.course = profile.course || '';
+        _state.settings.course = localSettings.course || profile.course || '';
         _state.settings.year = profile.year || '';
-        _state.settings.avatar = profile.avatar || null;
+        _state.settings.avatar = localSettings.avatar || profile.avatar || null;
       }
 
       // 2. Load Tasks

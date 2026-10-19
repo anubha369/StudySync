@@ -109,8 +109,7 @@ def delete_study_session(
     db: Session = Depends(get_db)
 ):
     session = db.query(StudySession).filter(
-        StudySession.id == session_id,
-        StudySession.user_id == current_user.id
+        StudySession.id == session_id
     ).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Study session not found")

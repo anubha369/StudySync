@@ -158,7 +158,7 @@ window.StudySync.analytics = (function () {
     var maxHeight = 150;
 
     var bars = data.map(function(d) {
-      var height = maxMins > 0 ? Math.round((d.mins / maxMins) * maxHeight) : 0;
+      var height = maxMins > 0 ? Math.round((d.mins / 60) * maxHeight) : 0;
       var hrs    = d.mins >= 60 ? Math.floor(d.mins / 60) + 'h' + (d.mins % 60 ? (d.mins % 60) + 'm' : '') : (d.mins + 'm');
       return [
         '<div class="bar-group">',
@@ -229,7 +229,7 @@ window.StudySync.analytics = (function () {
     // Last 28 days
     var cells = '';
     var months = [];
-    for (var i = 27; i >= 0; i--) {
+    for (var i = 28; i > 0; i--) {
       var d    = u.addDays(new Date(), -i);
       var ds   = u.toDateStr(d);
       var mins = byDate[ds] || 0;

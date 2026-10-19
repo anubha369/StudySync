@@ -81,7 +81,7 @@ window.StudySync.dashboard = (function () {
     var total     = tasks.length;
     var done      = tasks.filter(function(t){ return t.status === 'done'; }).length;
     var pending   = tasks.filter(function(t){ return t.status !== 'done'; }).length;
-    var overdue   = tasks.filter(function(t){ return t.status !== 'done' && u.isOverdue(t.dueDate); }).length;
+    var overdue   = tasks.filter(function(t){ return u.isOverdue(t.dueDate); }).length;
     var pct       = total ? Math.round(done / total * 100) : 0;
     var todayLog  = timerLog.filter(function(e){ return e.date === u.today(); });
     var focusMins = u.sum(todayLog, function(e){ return e.duration || 0; });

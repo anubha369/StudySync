@@ -67,7 +67,7 @@ window.StudySync.settings = (function () {
       '</div>',
       '<div class="settings-row">',
         '<div class="settings-row-label"><h4>Short Break</h4><p>Short break between sessions (minutes)</p></div>',
-        _numberInput('short-break', s.shortBreak || 5, 1, 30, 1, 'shortBreak'),
+        _numberInput('short-break', s.shortBreak || 5, 0, 30, 1, 'shortBreak'),
       '</div>',
       '<div class="settings-row">',
         '<div class="settings-row-label"><h4>Long Break</h4><p>Long break after several sessions (minutes)</p></div>',

@@ -162,7 +162,7 @@ window.StudySync.timer = (function () {
         id:       u.generateId(),
         date:     u.today(),
         subject:  _currentSubject || '',
-        duration: Math.round(d.focus / 60),
+        duration: d.focus,
         type:     'pomodoro',
         endTime:  new Date().toTimeString().slice(0, 8)
       };
@@ -201,7 +201,7 @@ window.StudySync.timer = (function () {
   function _reset() {
     clearInterval(_intervalId);
     _running = false;
-    _resetTimer(_mode);
+    _resetTimer();
     _updatePlayPause();
   }
 

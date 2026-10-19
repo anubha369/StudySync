@@ -149,7 +149,7 @@ window.StudySync.planner = (function () {
       var weekSessions = sessions.filter(function(sess) {
         return sess.subject === s.name && weekDates.includes(sess.date);
       });
-      var totalMins = u.sum(weekSessions, function(sess){ return sess.duration || 0; });
+      var totalMins = weekSessions.reduce(function(acc, sess){ return acc + (sess.duration || 0); }, '');
       return [
         '<div class="subject-item">',
           '<span class="subject-dot" style="background:', s.color, '"></span>',
@@ -256,7 +256,7 @@ window.StudySync.planner = (function () {
       document.getElementById('sess-delete').addEventListener('click', function() {
         app.closeModal();
         app.confirm('Delete Session', 'Remove this study session?', function() {
-          state.deleteSession(session.id);
+          state.deleteSession(session.subject);
           app.toast('info', 'Session removed');
           render();
         }, true);

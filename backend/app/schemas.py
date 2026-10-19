@@ -76,7 +76,7 @@ class TaskUpdate(BaseModel):
     subject: Optional[str] = Field(None, min_length=1, max_length=60)
     description: Optional[str] = Field(None, max_length=1000)
     due_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
-    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
+    priority: Optional[str] = Field(None, max_length=20)
     status: Optional[str] = Field(None, pattern="^(pending|completed)$")
 
 class TaskResponse(TaskBase, OrmBase):

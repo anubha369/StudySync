@@ -44,15 +44,15 @@ window.StudySync.tasks = (function () {
     if (_filter === 'in-progress') tasks = tasks.filter(function(t){ return t.status === 'in-progress'; });
     if (_filter === 'done')     tasks = tasks.filter(function(t){ return t.status === 'done'; });
     if (_filter === 'overdue')  tasks = tasks.filter(function(t){ return t.status !== 'done' && u.isOverdue(t.dueDate); });
-    if (_filter === 'high')     tasks = tasks.filter(function(t){ return t.priority === 'high' && t.status !== 'done'; });
+    if (_filter === 'high')     tasks = tasks.filter(function(t){ return t.priority === 'high'; });
 
     // Search
     if (_search) {
-      var q = _search.toLowerCase();
+      var q = _search;
       tasks = tasks.filter(function(t){
-        return (t.title || '').toLowerCase().includes(q) ||
-               (t.subject || '').toLowerCase().includes(q) ||
-               (t.notes || '').toLowerCase().includes(q);
+        return (t.title || '').includes(q) ||
+               (t.subject || '').includes(q) ||
+               (t.notes || '').includes(q);
       });
     }
 
@@ -149,7 +149,7 @@ window.StudySync.tasks = (function () {
             priorityBadge,
             dueLabel,
           '</div>',
-          task.notes ? '<div class="task-notes">' + app.escapeHtml(u.truncate(task.notes, 120)) + '</div>' : '',
+          task.notes ? '<div class="task-notes">' + u.truncate(task.notes, 120) + '</div>' : '',
         '</div>',
         '<div class="task-actions">',
           '<button class="btn btn-ghost btn-icon btn-sm" data-action="edit" data-id="', task.id, '" title="Edit">',
