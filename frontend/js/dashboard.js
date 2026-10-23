@@ -36,7 +36,7 @@ window.StudySync.dashboard = (function () {
     if (!el) return;
     var hour = new Date().getHours();
     var greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    var name = settings.name || 'Student';
+    var name = settings.username || 'Student';
     var pending   = tasks.filter(function(t){ return t.status !== 'done'; }).length;
     var overdue   = tasks.filter(function(t){ return t.status !== 'done' && u.isOverdue(t.dueDate); }).length;
     var dueToday  = tasks.filter(function(t){ return t.status !== 'done' && u.daysUntil(t.dueDate) === 0; }).length;
