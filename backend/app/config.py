@@ -45,6 +45,10 @@ class Settings(BaseSettings):
             return "sqlite:////tmp/studysync.db"
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
+        elif url.startswith("sqlite:///./"):
+            rel_path = url[len("sqlite:///./"):]
+            db_path = BASE_DIR / rel_path
+            return f"sqlite:///{db_path}"
         return url
 
 settings = Settings()

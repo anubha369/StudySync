@@ -477,6 +477,9 @@ window.StudySync.auth = (function () {
     api.clearAuth();
     _currentUser = null;
     state.clear();
+    if (window.StudySync && window.StudySync.storage && typeof window.StudySync.storage.resetAll === 'function') {
+      window.StudySync.storage.resetAll();
+    }
     showAuthScreen('You have been logged out.');
     app.toast('info', 'Logged out', 'You have been safely signed out.');
   }
