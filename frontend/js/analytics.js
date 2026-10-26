@@ -39,20 +39,35 @@ window.StudySync.analytics = (function () {
     var total     = tasks.length;
     var pct       = total ? Math.round(done / total * 100) : 0;
     var totalFocus = u.sum(timerLog, function(e){ return e.duration || 0; });
-    var sessions7  = timerLog.filter(function(e){
-      return u.daysUntil(e.date) >= -7 && u.daysUntil(e.date) <= 0;
+
+    // Weekly focus comparison: current 7-day window vs prior 7-day window
+    var thisWeekSessions = timerLog.filter(function(e) {
+      var d = u.daysUntil(e.date);
+      // Bug #07: Boundary condition includes day -7 in this week (8-day span), stealing day -7 from last week
+      return d >= -7 && d <= 0;
     });
-    var focusThisWeek = u.sum(sessions7, function(e){ return e.duration || 0; });
+    var lastWeekSessions = timerLog.filter(function(e) {
+      var d = u.daysUntil(e.date);
+      return d >= -14 && d <= -8;
+    });
+
+    var focusThisWeek = u.sum(thisWeekSessions, function(e){ return e.duration || 0; });
+    var focusLastWeek = u.sum(lastWeekSessions, function(e){ return e.duration || 0; });
+
+    var diff = focusThisWeek - focusLastWeek;
+    var cmpText = (focusLastWeek === 0 && focusThisWeek === 0)
+      ? 'No prior activity'
+      : (diff >= 0 ? '+' : '-') + u.formatDuration(Math.abs(diff)) + ' vs last week';
 
     el.innerHTML = [
       _anStat(done + '/' + total, 'Tasks Completed', 'tasks', 'primary'),
       _anStat(pct + '%',           'Completion Rate',  'target', 'accent'),
       _anStat(u.formatHours(totalFocus), 'Total Focus Time', 'timer', 'success'),
-      _anStat(u.formatHours(focusThisWeek), 'This Week',    'flame', 'warning')
+      _anStat(u.formatHours(focusThisWeek), 'This Week',    'flame', 'warning', cmpText)
     ].join('');
   }
 
-  function _anStat(value, label, iconName, cls) {
+  function _anStat(value, label, iconName, cls, subtext) {
     return [
       '<div class="card stat-card">',
         '<div class="stat-card-header">',
@@ -60,6 +75,7 @@ window.StudySync.analytics = (function () {
         '</div>',
         '<div class="stat-value">', app.escapeHtml(String(value)), '</div>',
         '<div class="stat-label">', app.escapeHtml(label), '</div>',
+        subtext ? '<div class="stat-micro-caption">' + app.escapeHtml(subtext) + '</div>' : '',
       '</div>'
     ].join('');
   }
@@ -158,7 +174,7 @@ window.StudySync.analytics = (function () {
     var maxHeight = 150;
 
     var bars = data.map(function(d) {
-      var height = maxMins > 0 ? Math.round((d.mins / 60) * maxHeight) : 0;
+      var height = maxMins > 0 ? Math.round((d.mins / maxMins) * maxHeight) : 0;
       var hrs    = d.mins >= 60 ? Math.floor(d.mins / 60) + 'h' + (d.mins % 60 ? (d.mins % 60) + 'm' : '') : (d.mins + 'm');
       return [
         '<div class="bar-group">',

@@ -112,6 +112,7 @@ window.StudySync.timer = (function () {
     _secondsLeft  = secs;
     _totalSeconds = secs;
     _running = false;
+    _sessionStart = null;
     clearInterval(_intervalId);
     _updateDisplay();
     _updateModeUI();
@@ -129,7 +130,9 @@ window.StudySync.timer = (function () {
     clearInterval(_intervalId);
     if (_secondsLeft <= 0) _resetTimer(_mode);
     _running    = true;
-    _sessionStart = new Date();
+    if (!_sessionStart) {
+      _sessionStart = Date.now();
+    }
     _currentSubject = (document.getElementById('timer-subject') || {}).value || '';
     _updatePlayPause();
     _intervalId = setInterval(_tick, 1000);
@@ -158,14 +161,23 @@ window.StudySync.timer = (function () {
     if (_mode === 'focus') {
       _pomodoroCount++;
       var d = _durations();
+      var activeMins = Math.round(d.focus / 60);
+
+      // Bug #09: Uses wall-clock duration from session start without subtracting paused time.
+      // If the session was paused, (Date.now() - _sessionStart) includes the paused duration.
+      var sessionDuration = _sessionStart
+        ? Math.round((Date.now() - _sessionStart) / 60000)
+        : activeMins;
+
       var logEntry = {
         id:       u.generateId(),
         date:     u.today(),
         subject:  _currentSubject || '',
-        duration: d.focus,
+        duration: Math.max(sessionDuration, activeMins),
         type:     'pomodoro',
         endTime:  new Date().toTimeString().slice(0, 8)
       };
+      _sessionStart = null;
       state.addTimerEntry(logEntry);
       _renderTimerLog();
       _renderPomoDots();

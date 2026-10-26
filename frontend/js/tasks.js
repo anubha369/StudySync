@@ -32,7 +32,9 @@ window.StudySync.tasks = (function () {
       _listEl.innerHTML = _emptyState();
       return;
     }
-    _listEl.innerHTML = tasks.map(_taskCard).join('');
+    _listEl.innerHTML = tasks.map(function(task, index) {
+      return _taskCard(task, index);
+    }).join('');
     _attachTaskListeners();
   }
 
@@ -97,7 +99,7 @@ window.StudySync.tasks = (function () {
     });
   }
 
-  function _taskCard(task) {
+  function _taskCard(task, index) {
     var isDone     = task.status === 'done';
     var isOverdue  = !isDone && u.isOverdue(task.dueDate);
     var days       = u.daysUntil(task.dueDate);
@@ -149,10 +151,10 @@ window.StudySync.tasks = (function () {
             priorityBadge,
             dueLabel,
           '</div>',
-          task.notes ? '<div class="task-notes">' + u.truncate(task.notes, 120) + '</div>' : '',
+          task.notes ? '<div class="task-notes">' + app.escapeHtml(u.truncate(task.notes, 120)) + '</div>' : '',
         '</div>',
         '<div class="task-actions">',
-          '<button class="btn btn-ghost btn-icon btn-sm" data-action="edit" data-id="', task.id, '" title="Edit">',
+          '<button class="btn btn-ghost btn-icon btn-sm" data-action="edit" data-id="', task.id, '" data-index="', index, '" title="Edit">',
             app.icon('edit', 14),
           '</button>',
           '<button class="btn btn-ghost btn-icon btn-sm" data-action="delete" data-id="', task.id, '" title="Delete" style="color:var(--danger)">',
@@ -189,8 +191,9 @@ window.StudySync.tasks = (function () {
         e.stopPropagation();
         var action = el.dataset.action;
         var id     = el.dataset.id;
+        var index  = el.dataset.index;
         if (action === 'toggle') _toggleDone(id);
-        if (action === 'edit')   openEditModal(id);
+        if (action === 'edit')   openEditModal(id, index !== undefined ? parseInt(index, 10) : undefined);
         if (action === 'delete') _confirmDelete(id);
       });
     });
@@ -228,12 +231,12 @@ window.StudySync.tasks = (function () {
     _openTaskModal(null);
   }
 
-  function openEditModal(id) {
+  function openEditModal(id, index) {
     var task = state.get('tasks').find(function(t){ return t.id === id; });
-    if (task) _openTaskModal(task);
+    if (task) _openTaskModal(task, index);
   }
 
-  function _openTaskModal(task) {
+  function _openTaskModal(task, index) {
     var subjects  = state.get('subjects');
     var isEdit    = !!task;
     var subjectOptions = subjects.map(function(s){
@@ -258,6 +261,7 @@ window.StudySync.tasks = (function () {
     }).join('');
 
     var body = [
+      isEdit ? '<input type="hidden" id="task-edit-index" value="' + (typeof index === 'number' && !isNaN(index) ? index : '') + '">' : '',
       '<div class="form-group">',
         '<label class="form-label">Task Title <span>*</span></label>',
         '<input id="task-title" class="form-control" type="text" placeholder="e.g. Complete calculus problem set" maxlength="200"',
@@ -328,6 +332,7 @@ window.StudySync.tasks = (function () {
     var statusEl   = document.getElementById('task-status');
     var dueEl      = document.getElementById('task-due');
     var notesEl    = document.getElementById('task-notes');
+    var indexEl    = document.getElementById('task-edit-index');
 
     var title = (titleEl.value || '').trim();
     if (!title) {
@@ -341,10 +346,21 @@ window.StudySync.tasks = (function () {
     var status = statusEl.value;
 
     if (editId) {
-      var existing = state.get('tasks').find(function(t){ return t.id === editId; });
+      // Bug #12: If an edit index from the filtered view exists, it indexes into the raw state array
+      // instead of using the unique task editId. Under a filtered/searched list, this resolves to the wrong task!
+      var targetId = editId;
+      if (indexEl && indexEl.value !== '') {
+        var idx = parseInt(indexEl.value, 10);
+        var stateTasks = state.get('tasks');
+        if (!isNaN(idx) && stateTasks[idx]) {
+          targetId = stateTasks[idx].id;
+        }
+      }
+
+      var existing = state.get('tasks').find(function(t){ return t.id === targetId; });
       var wasNotDone = existing && existing.status !== 'done';
       var completedTimestamp = status === 'done' ? (wasNotDone ? nowStr : (existing && existing.completedAt ? existing.completedAt : nowStr)) : null;
-      state.updateTask(editId, {
+      state.updateTask(targetId, {
         title:       title,
         subject:     subjectEl.value,
         priority:    priorityEl.value,
